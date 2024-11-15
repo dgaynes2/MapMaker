@@ -1,0 +1,100 @@
+from dataclasses import dataclass
+
+WIN_TITLE = "City Name"
+ROOT_WIDTH = 500
+ROOT_HEIGHT = 500
+ROW_COUNT = 10
+COL_COUNT = 10
+BLANK = " "
+
+INTERSECTION_TYPES = {
+    0: "B",
+    1: "B",
+    2: "B",
+    3: "H",
+    4: "B",
+    5: "LU",
+    6: "RU",
+    7: "TU",
+    8: "B",
+    9: "LD",
+    10: "RD",
+    11: "TD",
+    12: "V",
+    13: "TL",
+    14: "TR",
+    15: "C",
+}
+
+SPECIAL_BUILDINGS = {
+    "planetarium": "",
+    "internet_cafe": "",
+    "shopping_center": "",
+    "school": "",
+    "apartment": "",
+    "embassy": "",
+    "dump": "",
+    "hospital": "⛨",
+    "photography_studio": "",
+    "mechanic": "",
+    "office_supplies": "",
+    "tailor": "",
+    "prison": "",
+    "music_shop": "",
+    "art_gallery": "",
+    "detective_agency": "",
+    "accounting_office": "",
+    "locksmith": "",
+    "post_office": "",
+    "rehab_center": "",
+    "weather_station": "",
+    "art_studio": "",
+    "print_shop": "",
+    "antique_shop": "⌚",
+    "phone_shop": "☎",
+    "cafe": "☕",
+    "pub": "☘",
+    "mosque": "☪",
+    "synagogue": "✡",
+    "church": "✝",
+    "florist": "✿",
+    "disability_services": "♿",
+    "recycling_center": "♻",
+    "boat_supplies": "⚓",
+    "hardware": "⚒",
+    "sporting_goods": "⚽",
+    "minigolf": "⛳",
+    "beach_supplies": "⛱",
+    "gas_station": "⛽",
+    "library": "",
+    "bank": "$",
+}
+
+
+@dataclass
+class ColorData:
+    grid = "light gray"
+    bridge = "red"
+    river = "cyan"
+    road = "black"
+
+
+@dataclass
+class GridData:
+    rows = 31
+    columns = 39
+    grid_size = 20
+    spacing = 4
+    runs = 3
+    density = 0  # higher -> more buildings
+
+    road_thickness = 2
+    bridge_thickness = 4
+
+
+@dataclass
+class MapData:
+    cells = {}  # stores info in each grid square
+    intersections = {}  # for memoization
+    special_building_frequency = 1
+    unique_buildings = {}
