@@ -1,0 +1,143 @@
+import Data
+
+from Data import ColorData, GridData, MapData
+
+
+def set_canvas_size():
+    """Determines dimensions of canvas based on row/column size and grid spacing.
+    This ensures all cells on map are same size.
+    """
+
+    # this ensures cells are all square
+    r_or_c = GridData.rows if GridData.rows > GridData.columns else GridData.columns
+    canvas_side = r_or_c * GridData.grid_size
+
+    return canvas_side
+
+
+def draw_grid(canvas):
+    """Create and draw grid on canvas"""
+
+    for h in range(GridData.rows):  # (h)orizontal lines
+        canvas.create_line(
+            0,
+            h * GridData.grid_size,
+            set_canvas_size(),
+            h * GridData.grid_size,
+            fill=ColorData.grid,
+        )
+
+    for v in range(GridData.columns):  # (v)ertical lines
+        canvas.create_line(
+            v * GridData.grid_size,
+            0,
+            v * GridData.grid_size,
+            set_canvas_size(),
+            fill=ColorData.grid,
+        )
+
+
+def _draw_left(canvas, coords):
+    x = coords[0] * GridData.grid_size
+    y = coords[1] * GridData.grid_size
+
+    canvas.create_line(
+        x,
+        y + GridData.grid_size // 2,
+        x + GridData.grid_size // 2,
+        y + GridData.grid_size // 2,
+        width=GridData.road_thickness,
+        fill=ColorData.road,
+    )
+
+
+def _draw_right(canvas, coords):
+    x = coords[0] * GridData.grid_size
+    y = coords[1] * GridData.grid_size
+
+    canvas.create_line(
+        x + GridData.grid_size // 2,
+        y + GridData.grid_size // 2,
+        x + GridData.grid_size,
+        y + GridData.grid_size // 2,
+        width=GridData.road_thickness,
+        fill=ColorData.road,
+    )
+
+
+def _draw_up(canvas, coords):
+    x = coords[0] * GridData.grid_size
+    y = coords[1] * GridData.grid_size
+
+    canvas.create_line(
+        x + GridData.grid_size // 2,
+        y,
+        x + GridData.grid_size // 2,
+        y + GridData.grid_size // 2,
+        width=GridData.road_thickness,
+        fill=ColorData.road,
+    )
+
+
+def _draw_down(canvas, coords):
+    x = coords[0] * GridData.grid_size
+    y = coords[1] * GridData.grid_size
+
+    canvas.create_line(
+        x + GridData.grid_size // 2,
+        y + GridData.grid_size // 2,
+        x + GridData.grid_size // 2,
+        y + GridData.grid_size,
+        width=GridData.road_thickness,
+        fill=ColorData.road,
+    )
+
+
+def draw_roads(canvas):
+    """Draws any of the following based on info from MapData.cells
+    │ ─ ┐ ┘ └ ┌ ┤ ┴ ├ ┬ ┼
+    """
+
+    for cell in MapData.cells:
+        match MapData.cells[cell]:
+            case Data.BLANK:
+                pass
+            case "V":  # │
+                _draw_up(canvas, cell)
+                _draw_down(canvas, cell)
+            case "H":  # ─
+                _draw_left(canvas, cell)
+                _draw_right(canvas, cell)
+            case "LU":  # ┘
+                _draw_left(canvas, cell)
+                _draw_up(canvas, cell)
+            case "LD":  # ┐
+                _draw_left(canvas, cell)
+                _draw_down(canvas, cell)
+            case "RU":  # └
+                _draw_right(canvas, cell)
+                _draw_up(canvas, cell)
+            case "RD":  # ┌
+                _draw_right(canvas, cell)
+                _draw_down(canvas, cell)
+            case "TL":  # ┤
+                _draw_left(canvas, cell)
+                _draw_up(canvas, cell)
+                _draw_down(canvas, cell)
+            case "TU":  # ┴
+                _draw_left(canvas, cell)
+                _draw_right(canvas, cell)
+                _draw_up(canvas, cell)
+            case "TR":  # ├
+                _draw_right(canvas, cell)
+                _draw_up(canvas, cell)
+                _draw_down(canvas, cell)
+            case "TD":  # ┬
+                _draw_left(canvas, cell)
+                _draw_right(canvas, cell)
+                _draw_down(canvas, cell)
+            case "C":  # ┼
+                _draw_left(canvas, cell)
+                _draw_right(canvas, cell)
+                _draw_up(canvas, cell)
+                _draw_down(canvas, cell)
