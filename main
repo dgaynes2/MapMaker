@@ -1,0 +1,202 @@
+import tkinter as tk
+import random
+
+import Data
+from Data import ColorData, GridData, MapData
+import Draw
+
+
+class MapMaker:
+    def __init__(self, win: tk.Tk):
+
+        self.win = win
+        self.win.geometry(f"{Data.ROOT_WIDTH}x{Data.ROOT_HEIGHT}")
+
+        self.canvas = None
+
+    def __set_canvas_size(self):
+        """Determines dimensions of canvas based on row/column size and grid spacing.
+        This ensures all cells on map are same size.
+        """
+
+        # this ensures cells are all square
+        r_or_c: int = (
+            GridData.rows if GridData.rows > GridData.columns else GridData.columns
+        )
+        canvas_side: int = r_or_c * GridData.grid_size
+
+        return canvas_side
+
+    def __create_cell_dict(self):
+        MapData.cells = {
+            (i, j): Data.BLANK
+            for i in range(GridData.columns)
+            for j in range(GridData.rows)
+        }
+
+    def __create_intersections(self):
+        """Establish positions of intersections"""
+
+        for x, y in MapData.cells:
+            if (x % GridData.spacing == 0 and x > 0) and (
+                y % GridData.spacing == 0 and y > 0
+            ):
+                MapData.cells[(x - 1, y - 1)] = "C"
+                MapData.intersections[(x - 1, y - 1)] = "C"  # (c)rossroads
+
+    def __create_roads(self, runs: int = GridData.runs):
+        """Create roads between intersections"""
+
+        for _ in range(runs):
+            for x, y in MapData.intersections:
+                road_direction = random.randint(0, 3)  # choose direction
+                update = None
+
+                match road_direction:
+                    case 0:  # left
+                        update = {
+                            (x - z, y): "H"
+                            for z in range(1, GridData.spacing)
+                            if x - z >= 0
+                        }
+                    case 1:  # right
+                        update = {
+                            (x + z, y): "H"
+                            for z in range(1, GridData.spacing)
+                            if x + z >= GridData.rows
+                        }
+                    case 2:  # up
+                        update = {
+                            (x, y - z): "V"
+                            for z in range(1, GridData.spacing)
+                            if y - z >= 0
+                        }
+                    case 3:  # down
+                        update = {
+                            (x, y + z): "V"
+                            for z in range(1, GridData.spacing)
+                            if y + z >= GridData.columns
+                        }
+                MapData.cells.update(update)
+
+    def __fix_intersections(self):
+        """Reshape intersections based on surrounding road configuration"""
+
+        for x, y in MapData.intersections:
+            road_count = 0
+            if MapData.cells[x - 1, y] != Data.BLANK:
+                road_count += 1
+            if MapData.cells[x + 1, y] != Data.BLANK:
+                road_count += 2
+            if MapData.cells[x, y - 1] != Data.BLANK:
+                road_count += 4
+            if MapData.cells[x, y + 1] != Data.BLANK:
+                road_count += 8
+
+            MapData.cells[(x, y)] = Data.INTERSECTION_TYPES[road_count]
+            MapData.intersections[(x, y)] = Data.INTERSECTION_TYPES[road_count]
+
+    def __determine_building_locations(self):
+        """Insert buildings into grid if open space next to road"""
+
+        for x, y in MapData.cells:
+            if MapData.cells[(x, y)] == Data.BLANK:
+                intersection_types = [
+                    i for i in Data.INTERSECTION_TYPES.values() if i != "B"
+                ]
+                if (
+                    x - 1 > 0
+                    and y - 1 > 0
+                    and MapData.cells[x - 1, y - 1] in intersection_types
+                    or (y - 1 > 0 and MapData.cells[x, y - 1] in intersection_types)
+                    or (
+                        x + 1 < GridData.columns
+                        and y - 1 > 0
+                        and MapData.cells[x + 1, y - 1] in intersection_types
+                    )
+                    or (x - 1 > 0 and MapData.cells[x - 1, y] in intersection_types)
+                    or (
+                        x + 1 < GridData.columns
+                        and MapData.cells[x + 1, y] in intersection_types
+                    )
+                    or (
+                        x - 1 > 0
+                        and y + 1 < GridData.rows
+                        and MapData.cells[x - 1, y + 1] in intersection_types
+                    )
+                    or (
+                        y + 1 < GridData.rows
+                        and MapData.cells[x, y + 1] in intersection_types
+                    )
+                    or (
+                        x + 1 < GridData.columns
+                        and y + 1 < GridData.rows
+                        and MapData.cells[x + 1, y + 1] in intersection_types
+                    )
+                ):
+                    if random.randint(0, 100) >= GridData.density:
+                        MapData.cells[(x, y)] = "B"
+
+    def __place_buildings(self):
+        """Draw black square to represent generic building"""
+
+        for cell in MapData.cells:
+            if MapData.cells[cell] == "B":
+                x = cell[0] * GridData.grid_size
+                y = cell[1] * GridData.grid_size
+
+                if random.randint(0, 100) <= MapData.special_building_frequency:
+                    # unique building
+                    building = random.choice(list(Data.SPECIAL_BUILDINGS.values()))
+
+                    self.canvas.create_text(
+                        x
+                        + GridData.grid_size
+                        // 2,  # Divide by 2 to center symbol in cell
+                        y + GridData.grid_size // 2,
+                        text=building,
+                    )
+                else:
+                    # generic building
+                    self.canvas.create_rectangle(
+                        x
+                        + GridData.grid_size
+                        // 4,  # Divide by 4 so square is smaller than cell
+                        y + GridData.grid_size // 4,
+                        x + GridData.grid_size - GridData.grid_size // 4,
+                        y + GridData.grid_size - GridData.grid_size // 4,
+                        fill="black",
+                    )
+
+    def __create_and_place_buildings(self):
+        self.__determine_building_locations()
+        self.__place_buildings()
+
+    def __create_and_draw_roads(self):
+        self.__create_intersections()
+        self.__create_roads()
+        self.__fix_intersections()
+        Draw.draw_roads(self.canvas)
+
+    def run(self):
+        self.canvas = tk.Canvas(
+            self.win,
+            width=self.__set_canvas_size(),
+            height=self.__set_canvas_size(),
+            bg="white",
+        )
+        self.canvas.pack()
+
+        Draw.draw_grid(self.canvas)
+        self.__create_cell_dict()
+        self.__create_and_draw_roads()
+        self.__create_and_place_buildings()
+        self.win.mainloop()
+
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    root.title(Data.WIN_TITLE)
+    root.resizable(False, False)
+    m = MapMaker(root)
+    m.run()
